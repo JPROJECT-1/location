@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lihat Lokasi</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      #map {
+        height: 100vh;
+        width: 100%;
+      }
+      .div {
+        width: 100%;
+        height: fit-content;
+        margin-bottom: 10px;
+      }
+      #list {
+        width: 100%;
+        height: fit-content;
+        margin-bottom: 40px;
+      }
+      #listo {
+        width: 100%;
+        height: fit-content;
+      }
+      .btn {
+        width: 100%;
+        height: fit-content;
+        padding: 10px 0px;
+        font-size: 20px;
+        border: 0px;
+        outline: 0px;
+        background-color: black;
+        color: white;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .btn2 {
+        width: 100%;
+        height: fit-content;
+        padding: 10px 0px;
+        font-size: 20px;
+        border: 0px;
+        outline: 0px;
+        background-color: rgb(255, 0, 0);
+        color: white;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .n {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="list">
+      <div id="listo"></div>
+    </div>
+    <div id="loc">
+      <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+      const qValue = getQueryParam("q");
+      console.log(qValue);
+      function redirectToNewURL(q) {
+        const newURL =
+          window.location.origin + window.location.pathname + "?q=" + q;
+        window.location.href = newURL;
+      }
+      function goquery(q) {
+        redirectToNewURL(q);
+      }
+    </script>
+    <script>
+      // Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBKQCfMD91SB9mueLtK_XjvkBgiFBGjG-M",
+        authDomain: "location-4139a.firebaseapp.com",
+        projectId: "location-4139a",
+        storageBucket: "location-4139a.firebasestorage.app",
+        messagingSenderId: "362384423011",
+        appId: "1:362384423011:web:e83d97eea460a090b5a056",
+        measurementId: "G-BNH269XX27",
+      };
+
+      // Initialize Firebase
+      const app = firebase.initializeApp(firebaseConfig);
+      const database = firebase.database(app);
+
+      function getUsersFromFirebase() {
+        const usersRef = database.ref("users/");
+
+        usersRef
+          .once("value", (snapshot) => {
+            const users = snapshot.val();
+            if (users) {
+              for (let userId in users) {
+                if (users.hasOwnProperty(userId)) {
+                  if (qValue == userId) {
+                    const userData = users[userId];
+                    const elemen = document.createElement("div");
+                    elemen.className = "div";
+                    elemen.innerHTML =
+                      `<button class="btn2" onclick="goquery('` +
+                      userId +
+                      `')">` +
+                      userId +
+                      `</button>`;
+                    document.getElementById("listo").appendChild(elemen);
+                  } else {
+                    const userData = users[userId];
+                    const elemen = document.createElement("div");
+                    elemen.className = "div";
+                    elemen.innerHTML =
+                      `<button class="btn" onclick="goquery('` +
+                      userId +
+                      `')">` +
+                      userId +
+                      `</button>`;
+                    document.getElementById("listo").appendChild(elemen);
+                  }
+                }
+              }
+            } else {
+              // alert("Tidak ada data pengguna.");
+            }
+          })
+          .catch((error) => {
+            // alert(`Gagal mengambil data: ${error.message}`);
+          });
+      }
+      window.onload = getUsersFromFirebase;
+
+      // Inisialisasi peta
+      const map = L.map("map").setView([0, 0], 13);
+
+      // Tambahkan layer peta (OpenStreetMap)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      // Fungsi untuk mendapatkan lokasi dari Firebase
+      function getLocationFromFirebases() {
+        const userLocationRef = database.ref("users/" + qValue + "/location");
+
+        // Membaca data lokasi dari Firebase
+        userLocationRef
+          .once("value", (snapshot) => {
+            const location = snapshot.val();
+
+            if (location) {
+              const { latitude, longitude } = location;
+
+              // Atur tampilan peta ke lokasi dari Firebase
+              map.setView([latitude, longitude], 15);
+
+              // Tambahkan marker ke lokasi pengguna
+              L.marker([latitude, longitude])
+                .addTo(map)
+                .bindPopup(qValue)
+                .openPopup();
+            } else {
+              // alert("Lokasi tidak ditemukan di Firebase.");
+            }
+          })
+          .catch((error) => {
+            // alert(`Gagal mengambil data dari Firebase: ${error.message}`);
+          });
+      }
+      getLocationFromFirebases();
+    </script>
+  </body>
+</html>

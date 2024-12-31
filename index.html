@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simpan Lokasi Setiap 10 Detik</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Konfigurasi Firebase
+      const firebaseConfig = {
+        apiKey: "AIzaSyBKQCfMD91SB9mueLtK_XjvkBgiFBGjG-M",
+        authDomain: "location-4139a.firebaseapp.com",
+        projectId: "location-4139a",
+        storageBucket: "location-4139a.firebasestorage.app",
+        messagingSenderId: "362384423011",
+        appId: "1:362384423011:web:e83d97eea460a090b5a056",
+        measurementId: "G-BNH269XX27",
+      };
+
+      // Inisialisasi Firebase
+      const app = firebase.initializeApp(firebaseConfig);
+      const database = firebase.database();
+
+      // Generate User ID
+      function generateRandomUser() {
+        const numbers = Math.floor(Math.random() * 1000000).toString(16);
+        const letters = Math.random().toString(36).substring(2, 5);
+        return `u-${numbers}${letters}`;
+      }
+
+      function saveUserId() {
+        let userId = localStorage.getItem("userId");
+        if (!userId) {
+          userId = generateRandomUser();
+          localStorage.setItem("userId", userId);
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", saveUserId);
+
+      // Fungsi untuk menyimpan lokasi ke Firebase
+      function updateLocation() {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords;
+              const userId = localStorage.getItem("userId");
+              const locationRef = database.ref(`users/${userId}/location`);
+
+              // Simpan lokasi ke Firebase
+              locationRef
+                .set({
+                  latitude,
+                  longitude,
+                  timestamp: Date.now(),
+                })
+                .then(() => {
+                  // document.getElementById("status").innerHTML = `
+                  //   <p>Lokasi diperbarui pada ${new Date().toLocaleTimeString()}</p>
+                  //   <p>Latitude: ${latitude}</p>
+                  //   <p>Longitude: ${longitude}</p>
+                  // `;
+                })
+                .catch((error) => {
+                  console.error("Error saving location:", error);
+                  // document.getElementById("status").innerHTML =
+                  //   "<p>Gagal memperbarui lokasi.</p>";
+                });
+            },
+            (error) => {
+              console.error("Geolocation error:", error.message);
+              // document.getElementById("status").innerHTML =
+              //   "<p>Tidak dapat mengakses lokasi Anda.</p>";
+            }
+          );
+        } else {
+          // document.getElementById("status").innerHTML =
+          //   "<p>Browser Anda tidak mendukung geolocation.</p>";
+        }
+      }
+
+      // Perbarui lokasi setiap 5 detik
+      setInterval(updateLocation, 5000);
+
+      // Perbarui lokasi untuk pertama kali saat halaman dimuat
+      updateLocation();
+    </script>
+  </body>
+</html>
